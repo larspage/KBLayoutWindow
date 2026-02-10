@@ -1,0 +1,25 @@
+# Vial Layer Display - Default Configuration
+# This file contains the default settings for the application
+
+[window]
+# Window dimensions and position
+width = 300
+height = 200
+x = 100
+y = 100
+always_on_top = true
+
+[display]
+# Display appearance settings
+font_size = 14
+font_family = "Arial"
+theme = "dark"
+
+[keyboard]
+# Keyboard communication settings
+poll_interval_ms = 100
+auto_detect = true
+
+[layer]
+# Default layer names
+default_layer_names = ["Base", "Mod", "Fn", "Mouse", "Media"]
