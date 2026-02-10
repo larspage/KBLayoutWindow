@@ -8,14 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned Features
-- Phase 2: User Interface Implementation
-  - Layer display widget with zoom functionality
-  - Main application window with system tray integration
-  - Layer preview dialog for viewing all layers
 - Phase 3: Integration & Polish
   - Integration testing
   - Performance optimization
   - Binary builds (PyInstaller)
+
+## [0.2.0] - 2025-02-10
+
+### Added
+- **User Interface Modules**
+  - [`LayerDisplay`](src/ui/layer_display.py:1) widget for displaying current keyboard layer
+  - [`MainWindow`](src/ui/main_window.py:1) application window with system tray integration
+  - [`LayerPreviewWindow`](src/ui/preview_window.py:1) dialog for viewing and editing all layers
+
+- **Layer Display Widget Features**
+  - Visual rendering of current layer number and name
+  - Zoom functionality (0.5x to 3.0x, default 1.0x)
+  - Custom styling and theming support
+  - PyQt6 signals for zoom changes and click events
+  - Custom painting with accent border
+  - Configurable font family and size
+  - Color parsing from hex strings, RGB tuples, or QColor objects
+
+- **Main Window Features**
+  - Integration with layer display, keyboard monitor, and layer state
+  - System tray icon with context menu
+  - Window management (always-on-top, minimize to tray)
+  - Zoom controls (zoom in, zoom out, reset)
+  - Layer preview button
+  - Status label for device connection state
+  - About dialog with application information
+  - Window state persistence (position, size)
+  - Signal connections for layer changes, device events, and errors
+
+- **Layer Preview Window Features**
+  - Grid view of all available layers (up to 16)
+  - Visual indication of current layer
+  - Layer name editing capability
+  - Save/Cancel/Reset buttons
+  - Confirmation dialogs for destructive actions
+  - Signal emission when layer names are changed
+  - Scrollable interface for many layers
+
+- **UI Test Suite**
+  - [`test_layer_display.py`](tests/test_layer_display.py:1) - 30+ tests for LayerDisplay widget
+  - [`test_main_window.py`](tests/test_main_window.py:1) - 25+ tests for MainWindow
+  - [`test_preview_window.py`](tests/test_preview_window.py:1) - 25+ tests for LayerPreviewWindow
+  - Tests for initialization, zoom, theming, signals, and user interactions
+
+### Technical Details
+- **UI Framework**: PyQt6 with custom widgets
+- **Threading**: Qt signals/slots for cross-thread communication
+- **Styling**: CSS-like stylesheets with QColor support
+- **Layouts**: QVBoxLayout, QHBoxLayout, QGridLayout
+- **Dialogs**: Modal dialogs with confirmation prompts
+- **System Tray**: QSystemTrayIcon with context menu
+
+### Integration
+- MainWindow integrates all Phase 1 modules (config_manager, layer_state, keyboard_monitor)
+- LayerDisplay receives layer updates from LayerState
+- MainWindow handles keyboard monitor signals (device_found, device_lost, error)
+- LayerPreviewWindow allows editing layer names in LayerState
 
 ## [0.1.0] - 2025-02-10
 
@@ -119,8 +172,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Version | Date | Status | Description |
 |---------|------|--------|-------------|
 | 0.1.0 | 2025-02-10 | ✅ Released | Phase 1 - Core Infrastructure |
-| 0.2.0 | TBD | 🚧 Planned | Phase 2 - User Interface |
-| 0.3.0 | TBD | ⏳ Planned | Phase 3 - Integration & Polish |
+| 0.2.0 | 2025-02-10 | ✅ Released | Phase 2 - User Interface |
+| 0.3.0 | TBD | 🚧 Planned | Phase 3 - Integration & Polish |
 | 1.0.0 | TBD | ⏳ Planned | First stable release |
 
 ---
