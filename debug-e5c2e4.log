@@ -1,0 +1,12 @@
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0", "QT_QPA_PLATFORM": null, "platform": "linux"}, "timestamp": 1771372480414}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:before QApplication", "message": "before QApplication", "data": {}, "timestamp": 1771372480414}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0", "QT_QPA_PLATFORM": null, "platform": "linux"}, "timestamp": 1771372658366}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:before QApplication", "message": "before QApplication", "data": {}, "timestamp": 1771372658366}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0", "QT_QPA_PLATFORM": null, "platform": "linux"}, "timestamp": 1771443953345}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:before QApplication", "message": "before QApplication", "data": {}, "timestamp": 1771443953345}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0", "QT_QPA_PLATFORM": null, "platform": "linux"}, "timestamp": 1771444199742}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:before QApplication", "message": "before QApplication", "data": {}, "timestamp": 1771444199742}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:after QApplication", "message": "after QApplication", "data": {}, "timestamp": 1771444203879}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": ":0", "WAYLAND_DISPLAY": "wayland-0", "QT_QPA_PLATFORM": null, "platform": "linux"}, "timestamp": 1771444313683}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:before QApplication", "message": "before QApplication", "data": {}, "timestamp": 1771444313684}
+{"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H5", "location": "main.py:after QApplication", "message": "after QApplication", "data": {}, "timestamp": 1771444313706}
