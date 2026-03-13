@@ -11,7 +11,7 @@ Classes:
 
 import logging
 import threading
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -48,8 +48,9 @@ class LayerState(QObject):
         Gaming
     """
 
-    # PyQt6 signal emitted when layer changes
-    layer_changed = pyqtSignal(int)
+    # PyQt6 signals
+    layer_changed   = pyqtSignal(int)
+    keymap_loaded   = pyqtSignal()      # emitted when full keymap data arrives
 
     def __init__(self, max_layers: int = 16) -> None:
         """
@@ -70,6 +71,11 @@ class LayerState(QObject):
         self._current_layer = 0
         self._layer_names: Dict[int, str] = {}
         self._lock = threading.RLock()
+
+        # Keyboard layout and keymap data (set by KeyboardMonitor after connect)
+        self._key_defs: List[Dict[str, Any]] = []
+        # all_keymaps[layer][key_index] = 16-bit keycode
+        self._all_keymaps: List[List[int]] = []
 
         # Initialize default layer names
         self._initialize_default_names()
@@ -114,19 +120,19 @@ class LayerState(QObject):
                 f"layer must be between 0 and {self._max_layers - 1}, got {layer}"
             )
 
+        layer_actually_changed = False
         with self._lock:
             if self._current_layer != layer:
                 old_layer = self._current_layer
                 self._current_layer = layer
+                layer_actually_changed = True
                 logger.debug(f"Layer changed from {old_layer} to {layer}")
-
-                # Emit signal outside the lock to avoid potential deadlocks
-                # with connected slots that might also acquire locks
             else:
                 logger.debug(f"Layer unchanged: {layer}")
 
-        # Emit signal after releasing the lock
-        self.layer_changed.emit(layer)
+        # Emit signal after releasing the lock to avoid potential deadlocks
+        if layer_actually_changed:
+            self.layer_changed.emit(layer)
 
     def get_current_layer(self) -> int:
         """
@@ -247,6 +253,34 @@ class LayerState(QObject):
             int: Maximum number of layers supported
         """
         return self._max_layers
+
+    def set_keyboard_data(
+        self,
+        key_defs: List[Dict[str, Any]],
+        all_keymaps: List[List[int]],
+        num_layers: Optional[int] = None,
+    ) -> None:
+        """
+        Store keyboard layout definition and full keymap data.
+
+        Args:
+            key_defs:    List of key position dicts from vial_protocol.extract_layout_keys()
+            all_keymaps: [layer][key_index] → 16-bit keycode
+            num_layers:  Actual layer count (overrides max_layers if provided)
+        """
+        with self._lock:
+            self._key_defs    = key_defs
+            self._all_keymaps = all_keymaps
+            if num_layers and 1 <= num_layers <= 32:
+                self._max_layers = num_layers
+        self.keymap_loaded.emit()
+
+    def get_keyboard_data(self):
+        """
+        Return (key_defs, all_keymaps) tuple.
+        """
+        with self._lock:
+            return list(self._key_defs), [list(km) for km in self._all_keymaps]
 
     def is_valid_layer(self, layer: int) -> bool:
         """
