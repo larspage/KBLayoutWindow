@@ -10,14 +10,14 @@ Classes:
 
 from typing import Optional, Dict, Any
 from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QMenu, QSystemTrayIcon,
-    QMessageBox, QFrame
+    QMainWindow, QWidget, QVBoxLayout,
+    QLabel, QMenu, QSystemTrayIcon,
+    QMessageBox
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon, QAction, QCloseEvent
 
-from src.ui.layer_display import LayerDisplay
+from src.ui.keyboard_widget import KeyboardWidget
 from src.ui.preview_window import LayerPreviewWindow
 from src.core.layer_state import LayerState
 from src.core.keyboard_monitor import KeyboardMonitor
@@ -50,8 +50,6 @@ class MainWindow(QMainWindow):
     # Default window settings
     DEFAULT_WIDTH = 200
     DEFAULT_HEIGHT = 150
-    DEFAULT_MIN_WIDTH = 150
-    DEFAULT_MIN_HEIGHT = 100
     
     def __init__(
         self,
@@ -105,11 +103,6 @@ class MainWindow(QMainWindow):
             window_config.get("width", self.DEFAULT_WIDTH),
             window_config.get("height", self.DEFAULT_HEIGHT)
         )
-        self.setMinimumSize(
-            self.DEFAULT_MIN_WIDTH,
-            self.DEFAULT_MIN_HEIGHT
-        )
-        
         # Window position
         x = window_config.get("x")
         y = window_config.get("y")
@@ -130,70 +123,26 @@ class MainWindow(QMainWindow):
     
     def _setup_ui(self) -> None:
         """Setup the user interface."""
-        # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        
-        # Main layout
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(5)
-        
-        # Layer display widget
-        self._layer_display = LayerDisplay(
-            parent=central_widget,
-            config=self._config
-        )
-        main_layout.addWidget(self._layer_display)
-        
-        # Control buttons
-        control_layout = QHBoxLayout()
-        control_layout.setSpacing(5)
-        
-        # Zoom out button
-        self._zoom_out_btn = QPushButton("-")
-        self._zoom_out_btn.setFixedSize(30, 30)
-        self._zoom_out_btn.setToolTip("Zoom Out")
-        self._zoom_out_btn.clicked.connect(self._layer_display.zoom_out)
-        control_layout.addWidget(self._zoom_out_btn)
-        
-        # Zoom reset button
-        self._zoom_reset_btn = QPushButton("R")
-        self._zoom_reset_btn.setFixedSize(30, 30)
-        self._zoom_reset_btn.setToolTip("Reset Zoom")
-        self._zoom_reset_btn.clicked.connect(self._layer_display.reset_zoom)
-        control_layout.addWidget(self._zoom_reset_btn)
-        
-        # Zoom in button
-        self._zoom_in_btn = QPushButton("+")
-        self._zoom_in_btn.setFixedSize(30, 30)
-        self._zoom_in_btn.setToolTip("Zoom In")
-        self._zoom_in_btn.clicked.connect(self._layer_display.zoom_in)
-        control_layout.addWidget(self._zoom_in_btn)
-        
-        # Preview button
-        self._preview_btn = QPushButton("P")
-        self._preview_btn.setFixedSize(30, 30)
-        self._preview_btn.setToolTip("Layer Preview")
-        self._preview_btn.clicked.connect(self._show_preview)
-        control_layout.addWidget(self._preview_btn)
-        
-        # Add control layout to main layout
-        main_layout.addLayout(control_layout)
-        
-        # Status label
+
+        self._main_layout = QVBoxLayout()
+        self._main_layout.setSpacing(0)
+
+        # Keyboard widget — full layout with layer tabs and zoom controls
+        self._kb_widget = KeyboardWidget(parent=central_widget)
+        self._main_layout.addWidget(self._kb_widget)
+
+        # Status label — doubles as the bottom margin; height sets the padding unit
         self._status_label = QLabel("Initializing...")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._status_label.setStyleSheet("color: #888; font-size: 10px;")
-        main_layout.addWidget(self._status_label)
-        
-        # Set layout
-        central_widget.setLayout(main_layout)
-        
-        # Update layer display with current state
-        current_layer = self._layer_state.get_current_layer()
-        layer_name = self._layer_state.get_layer_name(current_layer)
-        self._layer_display.update_layer(current_layer, layer_name)
+        self._main_layout.addWidget(self._status_label)
+
+        central_widget.setLayout(self._main_layout)
+
+        # Apply equal margins once the label height is known
+        self._apply_margins()
     
     def _setup_system_tray(self) -> None:
         """Setup system tray icon and menu."""
@@ -245,24 +194,39 @@ class MainWindow(QMainWindow):
         """Connect signals from other components."""
         # Layer state changes
         self._layer_state.layer_changed.connect(self._on_layer_changed)
-        
+        self._layer_state.keymap_loaded.connect(self._on_keymap_loaded)
+
         # Keyboard monitor signals
         self._keyboard_monitor.device_found.connect(self._on_device_found)
         self._keyboard_monitor.device_lost.connect(self._on_device_lost)
         self._keyboard_monitor.error.connect(self._on_error)
-        
-        # Layer display signals
-        self._layer_display.clicked.connect(self._on_layer_display_clicked)
+
+        # Auto-fit window when keyboard layout changes size
+        self._kb_widget.layout_resized.connect(self._fit_to_keyboard)
     
     def _on_layer_changed(self, layer: int) -> None:
-        """
-        Handle layer change events.
-        
-        Args:
-            layer: New layer number
-        """
-        layer_name = self._layer_state.get_layer_name(layer)
-        self._layer_display.update_layer(layer, layer_name)
+        self._kb_widget.set_active_layer(layer)
+
+    def _on_keymap_loaded(self) -> None:
+        key_defs, all_keymaps = self._layer_state.get_keyboard_data()
+        num_layers = len(all_keymaps)
+        self._kb_widget.set_keyboard_data(key_defs, all_keymaps, num_layers)
+
+    def _apply_margins(self) -> None:
+        """Set equal padding on all sides using the status label height as the unit."""
+        s = self._status_label.sizeHint().height()
+        if s <= 0:
+            s = 16  # fallback before widget is realized
+        self._status_label.setFixedHeight(s)
+        # top=s, left=s, right=s, bottom=0 — status label provides the bottom s
+        self._main_layout.setContentsMargins(s, s, s, 0)
+
+    def _fit_to_keyboard(self) -> None:
+        self._apply_margins()
+        def do_fit():
+            self.setMinimumSize(0, 0)
+            self.resize(self.sizeHint())
+        QTimer.singleShot(0, do_fit)
     
     def _on_device_found(self, device_info: Dict[str, Any]) -> None:
         """
@@ -291,8 +255,6 @@ class MainWindow(QMainWindow):
         self._status_label.setStyleSheet("color: #F44336; font-size: 10px;")
     
     def _on_layer_display_clicked(self) -> None:
-        """Handle layer display click events."""
-        # Toggle window visibility or show context menu
         self._toggle_window_visibility()
     
     def _tray_icon_activated(self, reason) -> None:
@@ -339,7 +301,7 @@ class MainWindow(QMainWindow):
         # Update layer display with new name
         current_layer = self._layer_state.get_current_layer()
         layer_name = self._layer_state.get_layer_name(current_layer)
-        self._layer_display.update_layer(current_layer, layer_name)
+        self._kb_widget.set_active_layer(current_layer)
     
     def _show_settings(self) -> None:
         """Show settings dialog."""
@@ -404,14 +366,8 @@ class MainWindow(QMainWindow):
             self._quit_application()
             event.accept()
     
-    def get_layer_display(self) -> LayerDisplay:
-        """
-        Get the layer display widget.
-        
-        Returns:
-            LayerDisplay widget instance
-        """
-        return self._layer_display
+    def get_kb_widget(self) -> KeyboardWidget:
+        return self._kb_widget
     
     def get_keyboard_monitor(self) -> KeyboardMonitor:
         """

@@ -22,7 +22,7 @@ from PyQt6.QtGui import (
     QColor, QFont, QFontMetrics, QPainter, QPen, QBrush
 )
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QPushButton, QScrollArea,
+    QHBoxLayout, QLabel, QPushButton,
     QSizePolicy, QToolTip, QVBoxLayout, QWidget
 )
 
@@ -61,7 +61,7 @@ class _KeyCanvasWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         self.setMouseTracking(True)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         self._key_defs: List[Dict[str, Any]] = []      # from extract_layout_keys()
         self._keycodes: List[int]            = []      # one per key_def entry
@@ -128,6 +128,8 @@ class _KeyCanvasWidget(QWidget):
         needed_w = int(max_x + self._offset_x) + 4
         needed_h = int(max_y + self._offset_y) + 4
         self.setMinimumSize(needed_w, needed_h)
+        self.setFixedSize(needed_w, needed_h)
+        self.updateGeometry()
 
     def _key_label(self, idx: int) -> str:
         if idx < len(self._keycodes):
@@ -221,6 +223,7 @@ class KeyboardWidget(QWidget):
     """
 
     layer_selected = pyqtSignal(int)
+    layout_resized = pyqtSignal()   # emitted after zoom or layout change
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -278,13 +281,10 @@ class KeyboardWidget(QWidget):
         top_bar.setLayout(top_layout)
         root.addWidget(top_bar)
 
-        # --- scrollable canvas ---
+        # --- canvas, directly in layout so adjustSize() works ---
         self._canvas = _KeyCanvasWidget()
-        scroll = QScrollArea()
-        scroll.setWidget(self._canvas)
-        scroll.setWidgetResizable(False)
-        scroll.setStyleSheet(f"background-color: {COLOR_CANVAS_BG.name()}; border: none;")
-        root.addWidget(scroll, 1)
+        self._canvas.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        root.addWidget(self._canvas)
 
         self.setLayout(root)
         self._rebuild_tabs()
@@ -313,6 +313,8 @@ class KeyboardWidget(QWidget):
         self._canvas.set_layout(key_defs)
         self._rebuild_tabs()
         self._show_layer(self._active_layer)
+        self.updateGeometry()
+        self.layout_resized.emit()
 
     def set_active_layer(self, layer: int) -> None:
         """
@@ -381,11 +383,20 @@ class KeyboardWidget(QWidget):
         self._show_layer(layer)
         self.layer_selected.emit(layer)
 
+    def sizeHint(self) -> QSize:
+        canvas_hint = self._canvas.sizeHint()
+        top_bar_h = 40  # top bar fixed height
+        return QSize(canvas_hint.width(), canvas_hint.height() + top_bar_h)
+
     def _zoom_in(self) -> None:
         self._canvas.set_zoom(self._canvas.get_zoom() + 0.1)
+        self.updateGeometry()
+        self.layout_resized.emit()
 
     def _zoom_out(self) -> None:
         self._canvas.set_zoom(self._canvas.get_zoom() - 0.1)
+        self.updateGeometry()
+        self.layout_resized.emit()
 
     @staticmethod
     def _tab_btn_style(displayed: bool, active_kb: bool) -> str:

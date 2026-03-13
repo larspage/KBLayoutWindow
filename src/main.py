@@ -8,6 +8,7 @@ keyboards.
 
 import json
 import os
+import signal
 import sys
 import time
 from typing import NoReturn
@@ -49,6 +50,9 @@ def main() -> int:
     # #region agent log
     _dbg({"sessionId": "e5c2e4", "runId": "run1", "hypothesisId": "H1", "location": "main.py:main", "message": "main entered, env", "data": {"DISPLAY": os.environ.get("DISPLAY"), "WAYLAND_DISPLAY": os.environ.get("WAYLAND_DISPLAY"), "QT_QPA_PLATFORM": os.environ.get("QT_QPA_PLATFORM"), "platform": sys.platform}})
     # #endregion
+    # Restore default SIGINT so Ctrl+C kills the process even inside Qt's event loop
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     # Force xcb on Linux when unset so Qt skips broken Wayland (H1/H3); requires libxcb-cursor0 installed
     if sys.platform == "linux" and os.environ.get("QT_QPA_PLATFORM") is None:
         os.environ["QT_QPA_PLATFORM"] = "xcb"
