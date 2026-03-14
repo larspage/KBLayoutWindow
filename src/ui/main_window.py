@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtGui import QIcon, QAction, QCloseEvent
+from PyQt6.QtGui import QIcon, QAction, QCloseEvent, QPixmap, QPainter, QColor, QFont
 
 from src.ui.keyboard_widget import KeyboardWidget
 from src.ui.preview_window import LayerPreviewWindow
@@ -92,10 +92,28 @@ class MainWindow(QMainWindow):
         # Start keyboard monitoring
         self._keyboard_monitor.start()
     
+    @staticmethod
+    def _make_ld_icon(size: int = 64) -> QIcon:
+        """Generate an 'LD' icon: green text on black background."""
+        px = QPixmap(size, size)
+        px.fill(QColor("black"))
+        painter = QPainter(px)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QColor("#00cc00"))
+        font = QFont("monospace", int(size * 0.38), QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.drawText(px.rect(), Qt.AlignmentFlag.AlignCenter, "LD")
+        painter.end()
+        return QIcon(px)
+
     def _setup_window(self) -> None:
         """Setup window properties from configuration."""
         # Window title
-        self.setWindowTitle("Vial Layer Display")
+        self.setWindowTitle("Layer Displayer")
+
+        # App icon (LD — green on black)
+        icon = self._make_ld_icon()
+        self.setWindowIcon(icon)
         
         # Window size
         window_config = self._config.get("window", {})
@@ -181,9 +199,9 @@ class MainWindow(QMainWindow):
         # Set menu
         self._tray_icon.setContextMenu(tray_menu)
         
-        # Set icon (placeholder - will need actual icon file)
-        # self._tray_icon.setIcon(QIcon("assets/icons/app_icon.png"))
-        
+        self._tray_icon.setIcon(self._make_ld_icon())
+        self._tray_icon.setToolTip("Layer Displayer")
+
         # Show tray icon
         self._tray_icon.show()
         
